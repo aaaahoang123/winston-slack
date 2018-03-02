@@ -3,3 +3,4 @@
 * [REFACTOR] Convert the logger to TypeScript
 * [FEAT] Add convenient interfaces to ease typing and intellisense
 * [FEAT] If the given `meta` is an instance of `Error`, add it to the message
+* [FEAT] Add a postinstall (npm) script to build the project; link typedefs;

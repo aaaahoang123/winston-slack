@@ -1,7 +1,7 @@
 [Winston](https://github.com/winstonjs/winston) Transport for
 [Slack](https://slack.com/) chat integration.
 
-    npm install --save winston-slack-transport
+    npm install --save @gojob/winston-slack
 
 Basic transport that works just like all other winston transports. Sends logged
 messages to a specified Slack chat channel.
@@ -22,7 +22,7 @@ not specified per message.
 ---
 
     var winston = require('winston');
-    var Slack = require('winston-slack-transport');
+    var Slack = require('@gojob/winston-slack');
 
     winston.add(Slack, {
         webhook_url: "https://hooks.slack.com/services/XXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ",
