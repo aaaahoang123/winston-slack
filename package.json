@@ -1,13 +1,19 @@
 {
-  "name": "winston-slack-transport",
-  "version": "2.0.0",
+  "name": "@gojob/winston-slack",
+  "version": "0.1.0",
   "contributors": [
-    "Magnus Hoff <maghoff@gmail.com>",
-    "Andrew Batchelor <andy.batchelor@tritondigital.com>"
+    "Vincent <vincent@gojob.com>"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/wja-no/winston-slack"
+    "url": "https://github.com/vinceops/winston-slack"
+  },
+  "main": "./dist/winston-slack.js",
+  "types": "./dist/winston-slack.d.ts",
+  "scripts": {
+    "lint": "tslint -c tslint.json -p tsconfig.json",
+    "build": "tsc -p .",
+    "postinstall": "npm run build"
   },
   "keywords": [
     "logging",
@@ -21,11 +27,17 @@
   "peerDependencies": {
     "winston": ">=0.7.2"
   },
-  "main": "./lib/winston-slack",
   "engines": {
-    "node": ">= 0.6.0"
+    "node": ">= 0.10.3"
   },
   "dependencies": {
-    "request": "^2.67.0"
+    "@types/request": "^2.47.0",
+    "@types/winston": "^2.3.8",
+    "request": "^2.83.0",
+    "typescript": "^2.7.2",
+    "winston": "^2.4.0"
+  },
+  "devDependencies": {
+    "tslint": "^5.9.1"
   }
 }
