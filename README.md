@@ -1,3 +1,8 @@
+Based on [wja-no/winston-slack](https://github.com/wja-no/winston-slack).
+Rewritten in TypeScript.
+
+---
+
 [Winston](https://github.com/winstonjs/winston) Transport for
 [Slack](https://slack.com/) chat integration.
 
