@@ -13,6 +13,7 @@
     "target": "es5",
     "sourceMap": true,
     "allowJs": false,
+    "skipLibCheck": true,
     "outDir": "./dist"
   },
   "include": [
