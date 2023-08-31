@@ -1,5 +1,8 @@
+import { TransformableInfo } from 'logform';
 import * as request from 'request';
-import { GenericTransportOptions, LogCallback, Transport, TransportOptions } from 'winston';
+import { MESSAGE } from 'triple-beam';
+import { LogCallback } from 'winston';
+import * as Transport from 'winston-transport';
 
 export interface SlackAttachment {
   fallback: string;
@@ -11,11 +14,13 @@ export interface SlackAttachment {
   title: string;
   title_link: string;
   text: string;
-  fields: [{
-    title: string;
-    value: string;
-    short: boolean
-  }];
+  fields: [
+    {
+      title: string;
+      value: string;
+      short: boolean;
+    },
+  ];
   image_url: string;
   thumb_url: string;
   footer: string;
@@ -24,18 +29,19 @@ export interface SlackAttachment {
 }
 
 export interface SlackPayload {
-  attachments: SlackAttachment[];
-  channel: string;
-  username: string;
-  icon_url: string;
-  icon_emoji: string;
-  link_names: boolean;
-  unfurl_links: boolean;
-  unfurl_media: boolean;
-  text: string;
+  attachments?: SlackAttachment[];
+  channel?: string;
+  username?: string;
+  icon_url?: string;
+  icon_emoji?: string;
+  link_names?: boolean;
+  unfurl_links?: boolean;
+  unfurl_media?: boolean;
+  text?: string;
 }
 
-export interface SlackTransportOptions extends GenericTransportOptions {
+export interface SlackTransportOptions
+    extends Transport.TransportStreamOptions {
   webhook_url: string;
   channel?: string;
   username?: string;
@@ -45,7 +51,6 @@ export interface SlackTransportOptions extends GenericTransportOptions {
   unfurl_links?: boolean;
   unfurl_media?: boolean;
   link_names?: boolean;
-  custom_formatter?: (level: string, msg: string, meta: any) => SlackPayload;
 }
 
 export class SlackLogger extends Transport {
@@ -66,30 +71,19 @@ export class SlackLogger extends Transport {
     this.handleExceptions = !!config.handleExceptions;
   }
 
-  public log(level: string, msg: string, meta: any, callback: LogCallback) {
-    let message;
+  public log(info: TransformableInfo, callback: LogCallback) {
+    const { level } = info;
 
-    if (this.config.custom_formatter) {
-      // custom_formatter returns a complete payload
-      message = this.config.custom_formatter(level, msg, meta);
+    let text: string;
+    if (this.config.format) {
+      const formattedInfo = this.config.format.transform(info);
+      text = (formattedInfo as TransformableInfo)[MESSAGE];
     } else {
-      let text = `[*${level.toUpperCase()}*] ${msg}`;
-      let metaTrace;
-      if (meta instanceof Error) {
-          try {
-              metaTrace = JSON.stringify(meta);
-
-              if (metaTrace && metaTrace !== '{}') {
-                  text += `\n\`\`\`${metaTrace}\`\`\``;
-              }
-          } catch (e) {
-              metaTrace = '';
-          }
-      }
-
-      // partial payload: defines only the "text" property
-      message = { text } as any;
+      const rawMessage = info.message;
+      text = `[*${level.toUpperCase()}*] ${rawMessage}`;
     }
+    // partial payload: defines only the "text" property
+    const message = { text } as any;
 
     const payload: SlackPayload = {
       attachments: message.attachments || this.config.attachments,
@@ -103,23 +97,28 @@ export class SlackLogger extends Transport {
       username: message.username || this.config.username,
     };
 
-    request.post({
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' },
-        uri: this.config.webhook_url,
-      },
-      (err: any, res?: request.Response, body?: any) => {
-        if (err) {
-          return callback && callback(err);
-        }
+    request.post(
+        {
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' },
+          uri: this.config.webhook_url,
+        },
+        (err: any, res?: request.Response, body?: any) => {
+          if (err) {
+            return callback && callback(err);
+          }
 
-        if (res && res.statusCode !== 200) {
-          return callback(new Error(`Unexpected status code from Slack API: ${res.statusCode}`));
-        }
+          if (res && res.statusCode !== 200) {
+            return callback(
+                new Error(
+                    `Unexpected status code from Slack API: ${res.statusCode}`,
+                ),
+            );
+          }
 
-        this.emit('logged');
-        callback(null);
-      },
+          this.emit('logged');
+          callback(null);
+        },
     );
   }
 }

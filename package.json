@@ -1,19 +1,19 @@
 {
-  "name": "@gojob/winston-slack",
-  "version": "0.1.1",
+  "name": "@aaaahoang123/winston-slack",
+  "version": "0.2.0",
   "contributors": [
-    "Vincent <vincent@gojob.com>"
+    "Vincent <vincent@gojob.com>",
+    "HoangDo <hoangdo.2194@gmail.com>"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/vinceops/winston-slack"
+    "url": "https://github.com/aaaahoang123/winston-slack"
   },
   "main": "./dist/winston-slack.js",
   "types": "./dist/winston-slack.d.ts",
   "scripts": {
     "lint": "tslint -c tslint.json -p tsconfig.json",
-    "build": "tsc -p .",
-    "postinstall": "npm run build"
+    "build": "tsc -p ."
   },
   "keywords": [
     "logging",
@@ -31,13 +31,14 @@
     "node": ">= 0.10.3"
   },
   "dependencies": {
-    "@types/request": "^2.47.0",
-    "@types/winston": "^2.3.8",
-    "request": "^2.83.0",
-    "typescript": "^2.7.2",
-    "winston": "^2.4.0"
+    "winston": "^3.10.0",
+    "winston-transport": "^4.5.0",
+    "logform": "^2.5.1"
   },
   "devDependencies": {
-    "tslint": "^5.9.1"
+    "tslint": "^5.9.1",
+    "@types/request": "^2.48.8",
+    "typescript": "^5.0.2",
+    "@types/triple-beam": "^1.3.2"
   }
 }
