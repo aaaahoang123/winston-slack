@@ -1,6 +1,6 @@
 {
   "name": "@aaaahoang123/winston-slack",
-  "version": "0.2.1",
+  "version": "0.3.4",
   "contributors": [
     "Vincent <vincent@gojob.com>",
     "HoangDo <hoangdo.2194@gmail.com>"
@@ -9,8 +9,8 @@
     "type": "git",
     "url": "https://github.com/aaaahoang123/winston-slack"
   },
-  "main": "./dist/winston-slack.js",
-  "types": "./dist/winston-slack.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "build": "tsc -p ."
@@ -34,7 +34,7 @@
     "winston": "^3.10.0",
     "winston-transport": "^4.5.0",
     "logform": "^2.5.1",
-    "axios": "^1.5.0"
+    "@slack/webhook": "^6.1.0"
   },
   "devDependencies": {
     "tslint": "^5.9.1",

@@ -1,113 +1,60 @@
-import Axios from 'axios';
-import { TransformableInfo } from 'logform';
-import { MESSAGE } from 'triple-beam';
-import { LogCallback } from 'winston';
+import {IncomingWebhook, IncomingWebhookSendArguments} from '@slack/webhook';
+import {TransformableInfo} from 'logform';
+import {LEVEL, MESSAGE, SPLAT} from 'triple-beam';
+import {LogCallback} from 'winston';
 import * as Transport from 'winston-transport';
 
-export interface SlackAttachment {
-  fallback: string;
-  color: string;
-  pretext: string;
-  author_name: string;
-  author_link: string;
-  author_icon: string;
-  title: string;
-  title_link: string;
-  text: string;
-  fields: [
-    {
-      title: string;
-      value: string;
-      short: boolean;
-    },
-  ];
-  image_url: string;
-  thumb_url: string;
-  footer: string;
-  footer_icon: string;
-  ts: number;
-}
-
-export interface SlackPayload {
-  attachments?: SlackAttachment[];
-  channel?: string;
-  username?: string;
-  icon_url?: string;
-  icon_emoji?: string;
-  link_names?: boolean;
-  unfurl_links?: boolean;
-  unfurl_media?: boolean;
-  text?: string;
-}
-
 export interface SlackTransportOptions
-    extends Transport.TransportStreamOptions {
-  webhook_url: string;
-  channel?: string;
-  username?: string;
-  icon_url?: string;
-  icon_emoji?: string;
-  attachments?: SlackAttachment[];
-  unfurl_links?: boolean;
-  unfurl_media?: boolean;
-  link_names?: boolean;
+    extends Transport.TransportStreamOptions, IncomingWebhookSendArguments {
+    webhook_url: string;
 }
 
 export class SlackLogger extends Transport {
-  private config: SlackTransportOptions;
-  private axios = Axios.create({
-      headers: {
-          'Content-Type': 'application/json',
-      },
-  });
+    private readonly config: SlackTransportOptions;
+    private readonly webhook: IncomingWebhook;
 
-  constructor(config: SlackTransportOptions) {
-    super(config);
+    constructor(config: SlackTransportOptions) {
+        super(config);
 
-    if (!config) {
-      throw new Error('A configuration must be provided');
+        if (!config) {
+            throw new Error('A configuration must be provided');
+        }
+
+        if (!config.webhook_url) {
+            throw new Error('Configuration must include webhook_url');
+        }
+
+        this.config = config;
+        this.handleExceptions = !!config.handleExceptions;
+        this.webhook = new IncomingWebhook(config.webhook_url, config);
     }
 
-    if (!config.webhook_url) {
-      throw new Error('Configuration must include webhook_url');
-    }
+    public log(info: TransformableInfo, callback: LogCallback) {
+        const formattedInfo: TransformableInfo = this.config.format
+            ? this.config.format.transform(info) as TransformableInfo
+            : info;
 
-    this.config = config;
-    this.handleExceptions = !!config.handleExceptions;
-  }
+        delete formattedInfo[MESSAGE];
+        delete formattedInfo[SPLAT];
+        delete formattedInfo[LEVEL];
 
-  public log(info: TransformableInfo, callback: LogCallback) {
-    const { level } = info;
+        const texts: string[] = [];
 
-    let text: string;
-    if (this.config.format) {
-      const formattedInfo = this.config.format.transform(info);
-      text = (formattedInfo as TransformableInfo)[MESSAGE];
-    } else {
-      const rawMessage = info.message;
-      text = `[*${level.toUpperCase()}*] ${rawMessage}`;
-    }
-    // partial payload: defines only the "text" property
-    const message = { text } as any;
+        for (const key of Object.keys(formattedInfo).sort()) {
+            const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+            const value = formattedInfo[key];
+            texts.push(`*${formattedKey}*\n` + value?.toString());
+        }
 
-    const payload: SlackPayload = {
-      attachments: message.attachments || this.config.attachments,
-      channel: message.channel || this.config.channel,
-      icon_emoji: message.icon_emoji || this.config.icon_emoji,
-      icon_url: message.icon_url || this.config.icon_url,
-      link_names: message.link_names || this.config.link_names,
-      text: message.text,
-      unfurl_links: message.unfurl_links || this.config.unfurl_links,
-      unfurl_media: message.unfurl_media || this.config.unfurl_media,
-      username: message.username || this.config.username,
-    };
-
-    this.axios.post(this.config.webhook_url, payload)
-        .then(() => {
-            callback?.(null);
+        this.webhook.send({
+            ...this.config,
+            text: texts.join('\n'),
         })
-        .catch((e: any) => {
-            callback?.(e);
-        });
-  }
+            .then(() => {
+                callback?.(null);
+            })
+            .catch((e: any) => {
+                callback?.(e);
+            });
+    }
 }
