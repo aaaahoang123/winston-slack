@@ -1,5 +1,5 @@
+import Axios from 'axios';
 import { TransformableInfo } from 'logform';
-import * as request from 'request';
 import { MESSAGE } from 'triple-beam';
 import { LogCallback } from 'winston';
 import * as Transport from 'winston-transport';
@@ -55,6 +55,11 @@ export interface SlackTransportOptions
 
 export class SlackLogger extends Transport {
   private config: SlackTransportOptions;
+  private axios = Axios.create({
+      headers: {
+          'Content-Type': 'application/json',
+      },
+  });
 
   constructor(config: SlackTransportOptions) {
     super(config);
@@ -97,28 +102,12 @@ export class SlackLogger extends Transport {
       username: message.username || this.config.username,
     };
 
-    request.post(
-        {
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'application/json' },
-          uri: this.config.webhook_url,
-        },
-        (err: any, res?: request.Response, body?: any) => {
-          if (err) {
-            return callback && callback(err);
-          }
-
-          if (res && res.statusCode !== 200) {
-            return callback(
-                new Error(
-                    `Unexpected status code from Slack API: ${res.statusCode}`,
-                ),
-            );
-          }
-
-          this.emit('logged');
-          callback(null);
-        },
-    );
+    this.axios.post(this.config.webhook_url, payload)
+        .then(() => {
+            callback?.(null);
+        })
+        .catch((e: any) => {
+            callback?.(e);
+        });
   }
 }
